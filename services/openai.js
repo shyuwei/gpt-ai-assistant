@@ -60,9 +60,34 @@ const createChatCompletion = async ({
     max_tokens: maxTokens,
     frequency_penalty: frequencyPenalty,
     presence_penalty: presencePenalty,
-    stream: true, // 啟用流式回應
+    stream: true,
   };
-return client.post('/v1/chat/completions', body);
+const responses = [];
+  const res = await client.post('/v1/chat/completions', body, { responseType: 'stream' });
+
+  return new Promise((resolve, reject) => {
+    res.data.on('data', (chunk) => {
+      const lines = chunk.toString().split('\n').filter((line) => line.trim());
+      for (const line of lines) {
+        if (line === '[DONE]') {
+          resolve(responses.join('')); // 拼接所有回應
+          return;
+        }
+        try {
+          const parsed = JSON.parse(line.replace(/^data: /, ''));
+          if (parsed.choices?.[0]?.delta?.content) {
+            responses.push(parsed.choices[0].delta.content);
+          }
+        } catch (err) {
+          reject(err);
+        }
+      }
+    });
+
+    res.data.on('error', (err) => {
+      reject(err);
+    });
+  });
 };
 
 const createImage = ({
