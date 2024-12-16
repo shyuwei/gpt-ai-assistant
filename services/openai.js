@@ -66,6 +66,7 @@ const createChatCompletion = ({
     return res.data; // 返回完整的回應
   } catch (err) {
     console.error('Error during API request:', err);
+    return err.toString();
     throw err;
   }
 };
