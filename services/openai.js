@@ -60,47 +60,15 @@ const createChatCompletion = async ({
     max_tokens: maxTokens,
     frequency_penalty: frequencyPenalty,
     presence_penalty: presencePenalty,
-    stream: true, // 啟用流式回應
   };
 
-  const responses = [];
-  const res = await client.post('/v1/chat/completions', body, { responseType: 'stream' });
-
-  return new Promise((resolve, reject) => {
-    if (!res.data || typeof res.data.on !== 'function') {
-      reject(new Error('Stream data is not valid'));
-      return;
-    }
-
-    res.data.on('data', (chunk) => {
-      if (!chunk) {
-        console.error('Received undefined chunk');
-        return;
-      }
-
-      try {
-        const lines = chunk.toString().split('\n').filter((line) => line.trim());
-        for (const line of lines) {
-          if (line === '[DONE]') {
-            resolve(responses.join('')); // 拼接所有回應
-            return;
-          }
-          const parsed = JSON.parse(line.replace(/^data: /, ''));
-          if (parsed.choices?.[0]?.delta?.content) {
-            responses.push(parsed.choices[0].delta.content);
-          }
-        }
-      } catch (err) {
-        console.error('Error processing chunk:', chunk, err);
-        reject(err);
-      }
-    });
-
-    res.data.on('error', (err) => {
-      console.error('Stream error:', err);
-      reject(err);
-    });
-  });
+  try {
+    const res = await client.post('/v1/chat/completions', body);
+    return res.data; // 返回完整的回應
+  } catch (err) {
+    console.error('Error during API request:', err);
+    throw err;
+  }
 };
 
 const createImage = ({
