@@ -54,37 +54,50 @@ const createChatCompletion = async ({
   presencePenalty = config.OPENAI_COMPLETION_PRESENCE_PENALTY,
 }) => {
   const body = {
-    model: hasImage({ messages }) ? config.OPENAI_VISION_MODEL : model,
+    model,
     messages,
     temperature,
     max_tokens: maxTokens,
     frequency_penalty: frequencyPenalty,
     presence_penalty: presencePenalty,
-    stream: true,
+    stream: true, // 啟用流式回應
   };
-const responses = [];
+
+  const responses = [];
   const res = await client.post('/v1/chat/completions', body, { responseType: 'stream' });
 
   return new Promise((resolve, reject) => {
+    if (!res.data || typeof res.data.on !== 'function') {
+      reject(new Error('Stream data is not valid'));
+      return;
+    }
+
     res.data.on('data', (chunk) => {
-      const lines = chunk.toString().split('\n').filter((line) => line.trim());
-      for (const line of lines) {
-        if (line === '[DONE]') {
-          resolve(responses.join('')); // 拼接所有回應
-          return;
-        }
-        try {
+      if (!chunk) {
+        console.error('Received undefined chunk');
+        return;
+      }
+
+      try {
+        const lines = chunk.toString().split('\n').filter((line) => line.trim());
+        for (const line of lines) {
+          if (line === '[DONE]') {
+            resolve(responses.join('')); // 拼接所有回應
+            return;
+          }
           const parsed = JSON.parse(line.replace(/^data: /, ''));
           if (parsed.choices?.[0]?.delta?.content) {
             responses.push(parsed.choices[0].delta.content);
           }
-        } catch (err) {
-          reject(err);
         }
+      } catch (err) {
+        console.error('Error processing chunk:', chunk, err);
+        reject(err);
       }
     });
 
     res.data.on('error', (err) => {
+      console.error('Stream error:', err);
       reject(err);
     });
   });
