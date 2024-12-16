@@ -45,7 +45,7 @@ const hasImage = ({ messages }) => (
   ))
 );
 
-const createChatCompletion = async ({
+const createChatCompletion = ({
   model = config.OPENAI_COMPLETION_MODEL,
   messages,
   temperature = config.OPENAI_COMPLETION_TEMPERATURE,
@@ -54,14 +54,13 @@ const createChatCompletion = async ({
   presencePenalty = config.OPENAI_COMPLETION_PRESENCE_PENALTY,
 }) => {
   const body = {
-    model,
+    model: hasImage({ messages }) ? config.OPENAI_VISION_MODEL : model,
     messages,
     temperature,
     max_tokens: maxTokens,
     frequency_penalty: frequencyPenalty,
     presence_penalty: presencePenalty,
   };
-
   try {
     const res = await client.post('/v1/chat/completions', body);
     return res.data; // 返回完整的回應
