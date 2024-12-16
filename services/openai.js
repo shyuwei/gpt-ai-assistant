@@ -45,7 +45,7 @@ const hasImage = ({ messages }) => (
   ))
 );
 
-const createChatCompletion = ({
+const createChatCompletion = async ({
   model = config.OPENAI_COMPLETION_MODEL,
   messages,
   temperature = config.OPENAI_COMPLETION_TEMPERATURE,
@@ -62,6 +62,7 @@ const createChatCompletion = ({
     presence_penalty: presencePenalty,
     stream: true, // 啟用流式回應
   };
+
   const responses = [];
   const res = await client.post('/v1/chat/completions', body, { responseType: 'stream' });
 
