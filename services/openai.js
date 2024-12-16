@@ -61,14 +61,9 @@ const createChatCompletion = ({
     frequency_penalty: frequencyPenalty,
     presence_penalty: presencePenalty,
   };
-  try {
+
     const res = await client.post('/v1/chat/completions', body);
-    return res.data; // 返回完整的回應
-  } catch (err) {
-    const res = await client.post('/v1/chat/completions', err);
-    return res.data; // 返回完整的回應
-  }
- 
+    return res.data; // 返回完整的回應 
 };
 
 const createImage = ({
